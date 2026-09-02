@@ -45,7 +45,7 @@
 
 ## 端點總表
 
-共 49 條路由，全部需要會員 token。
+共 50 條路由，全部需要會員 token。
 
 ### 個人資料、會籍與通知
 | 方法 | 路徑 | 文件 |
@@ -86,7 +86,8 @@
 | GET | `buyer/orders` | [04](04-orders-and-payment.md#1-訂單列表) |
 | GET | `buyer/orders/{orderNo}` | [04](04-orders-and-payment.md#2-訂單詳情) |
 | POST | `buyer/orders/{orderNo}/payments` | [04](04-orders-and-payment.md#3-建立付款單) |
-| POST | `buyer/sub-orders/{orderNo}/confirm-receipt` | [04](04-orders-and-payment.md#4-確認收貨) |
+| POST | `buyer/orders/{orderNo}/cancel` | [04](04-orders-and-payment.md#4-取消尚未付款的訂單) |
+| POST | `buyer/sub-orders/{orderNo}/confirm-receipt` | [04](04-orders-and-payment.md#5-確認收貨) |
 
 ### 退貨、取消與退款
 | 方法 | 路徑 | 文件 |
