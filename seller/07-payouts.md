@@ -25,14 +25,13 @@
 2. **該子訂單的退貨窗口已屆滿**（送達日 ＋ `return_window_days`，日曆天）。
 3. 該筆付款已完成對帳且比對相符。
 4. 無進行中的退貨退款、爭議或拒付。
-5. 店面銀行帳戶完整且**通過驗證**（[02 §7](02-shop.md#7-撥款帳戶)）。
+5. PAYUNi 核實原交易商家 UNi 受款身分、新鮮能力與 grant 設定；本地 demo 才採店面銀行帳戶完整且通過驗證（[02 §7](02-shop.md#7-撥款帳戶)）。
 
 > 條件 1 與 2 不能合併：兩者都是「等一段日曆天」，但**起算點不同** ——
 > 前者自完成時間、後者自**送達日**，而買家可以在送達當日就點確認收貨。
 > 只靠條件 1 會讓款項在買家仍有法定退貨權的當下撥出（§12.3-80）。
 >
-> 條件 5 是最常見的卡關原因，而它只有平台解得開。撥款遲遲沒動時先看
-> `bank-account` 的 `payout_ready`。
+> PAYUNi 的條件 5 不能用 `bank-account.payout_ready` 代替；須由平台核實原交易綁定。
 
 ---
 
@@ -120,12 +119,36 @@ GET seller/payouts
 
 ### `expected_paid_at`：什麼時候會撥
 
-`pending` 的撥款單帶這一格 —— 候選已經建好，剩下的是下一次出款排程
-（每日固定時刻執行）。已出款、已中止、已失敗的為 `null`，
+目前只有 local／testing 的正額 `pending`、原付款全 demo 且無 G1 執行紀錄才帶這一格，
+表示下一次**本地模擬**排程，不是 PAYUNi／銀行到帳承諾。非 demo、production、零／負額及其他狀態為 `null`，
 那時看 `paid_at` 或 `aborted_reason` / `failed_reason`。
 
 **這是預期不是保證。** 出款前會在同一個交易內再驗證五項條件（§14.9.2）：
 期間新增的拒付、買家申請的退貨、對帳發現的金額不符，都會讓那一次出款被攔下。
+
+列表／詳情新增 `execution_notice`（字串），前端須顯示：demo 會明示不代表金流或銀行已入帳；
+外部付款提示逐交易釋款、費用與銀行到帳須分別核實；零／負額提示不出款且遞延不等於入帳。
+真實 PAYUNi 的 `paid` 完成條件依 §14.9.3，不能用本地模擬端點替代。API 邊界詳見[平台執行說明](../platform/07-finance.md)。
+
+列表及詳情同時提供 `net_amount_basis: "accrual"`，原 `net_amount` 保留應計拆帳結果，**不代表實際 UNi 或銀行入帳額**。
+`uni_settlement` 未整單核實時為 `null`（包含本地 demo），全部原交易證據採用後才提供：
+
+```json
+{
+  "verified": true,
+  "trade_count": 1,
+  "execute_amount": 450,
+  "fee_amount": -13,
+  "funds_amount": 437,
+  "verified_at": "2026-10-08T09:00:00+00:00",
+  "platform_fee_collection_verified": false,
+  "union_share_payment_verified": false,
+  "bank_receipt_verified": false
+}
+```
+
+以上是示例，不是封測收據。`funds_amount = execute_amount + fee_amount`；三個 `false` 表示各項尚未核實，不推定已付款或未付款。
+部分入帳仍不會呈現整單已核實。PAYUNi 結果未知不可沿用 demo 自動重送，須先查原交易。
 
 ---
 
@@ -229,8 +252,10 @@ POST seller/chargebacks/{chargeback}/response
 ### 拒付對撥款的影響
 
 - **尚未撥款**：那筆子訂單被候選條件 4 擋下，不會出款。
-- **已經撥款**：登錄拒付的同時建立一張**負向調整單**追扣，
-  於下期撥款的 `adjustment_amount` 出現。
+- **PAYUNi 敗訴（lost）**：仍阻擋原額撥款；敗訴不等於外部扣回已核實，不能靠重新查詢相符繞過。
+- **PAYUNi 已經撥款**：登錄拒付時只建立待核實應計調整，不自動進入下期抵扣，也不改寫原撥款。非 PAYUNi 則沿既有核准調整流程。
+
+抗辯送出會鎖定原訂單並重讀案件；已回覆或已定案者回 422，不會覆寫既有證據／結果。
 
 > **拒付不自動記你違規**（§14.8）：盜刷與持卡人誤認都有可能。
 > 查證屬實才另循 §P-07.1 建立記錄。

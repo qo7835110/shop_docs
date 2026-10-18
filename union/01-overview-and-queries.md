@@ -53,9 +53,31 @@ GET union/overview
     },
     "pending_reviews": { "shop_applications": 2, "product_reviews": 5, "expired_featured_slots": 1 },
     "member_sync": {
-      "has_ever_synced": false,
+      "has_ever_synced": true,
+      "is_failing": false,
       "is_stale": false,
-      "last_synced_at": null,
+      "last_synced_at": "2026-09-08 03:00:00",
+      "last_complete_success_at": "2026-09-08 03:00:00",
+      "last_attempt": {
+        "status": "succeeded",
+        "started_at": "2026-09-08 03:00:00",
+        "finished_at": "2026-09-08 03:04:12",
+        "source_observed_at": "2026-09-08 03:00:00",
+        "error": null,
+        "qualified": true,
+        "safety_assessment": {
+          "blocked": false,
+          "source_count": 120,
+          "previous_source_count": 118,
+          "source_shrink_percent": 0,
+          "resignation_candidate_count": 116,
+          "projected_resigning_count": 2,
+          "projected_resigning_percent": 1.72,
+          "source_shrink_threshold_percent": 50,
+          "resignation_threshold_percent": 50,
+          "minimum_affected_count": 20
+        }
+      },
       "stale_after_hours": 48
     }
   },
@@ -98,7 +120,7 @@ net_sales = gross_payable − refunded_amount − negative_adjustment_amount
 > 這一格**只有工會總覽有**：推薦版位由工會管理，平台總覽沒有對應的概念。
 
 `member_sync` 是**會務同步健康度，一律回傳**（不是只在異常時才出現 ——
-一個只在出事時才存在的欄位，出事時沒有人認得它）。四個欄位的意義與
+一個只在出事時才存在的欄位，出事時沒有人認得它）。各欄位的意義與
 `is_stale = true` 時哪些動作會被暫停，見
 [04 §13 會務同步異常時的行為](04-shop-and-member-management.md#13-會務同步異常時的行為u-053)。
 
@@ -372,6 +394,10 @@ GET union/violations
 | `counts_towards_points` | 後端算出的衍生值：是否仍計入累計點數。畫面請用它，不要自行以 `status` + `expires_at` 推導。 |
 | `appeal` | 申訴進度；沒有申訴時為 `null`。`status`：`pending` \| `upheld` \| `rejected`。 |
 | `is_major` | 重大違規可不經點數累計直接停權。 |
+| `attachments` / `appeal.attachments` | 記錄與申訴上傳的佐證檔案網址（與 `evidence` 的文字佐證分開）。 |
+| `appeal_deadline_at` | 賣家申訴截止時點（`violation_appeal_days`，預設 14 日曆天）。⚠️ 與 `expires_at` 差了半年。 |
+| `can_appeal` | 後端算出：這一刻賣家還送不送得出申訴。工會只能看，不能代為申訴。 |
+| `appeal.pending_days` | 申訴已等待的日曆天數；已裁定為 `null`。申訴由平台裁定，沒有決策期限，佇列依此排序。 |
 
 ### 工會端看不到的
 

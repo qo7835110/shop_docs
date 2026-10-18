@@ -1,5 +1,35 @@
 # 賣家中心 API
 
+平台財務的 [PAYUNi 商家日帳查詢](../platform/18-payuni-grant-query.md)需對帳權；本角色無批次、逐頁、逐列解析或原交易關聯入口，頁面收齊或關聯成功不代表已對帳或可撥款。
+
+平台財務另有 [PAYUNi 原付款查核](../platform/17-payuni-payment-query.md)，本角色不得使用；讀回付款狀態不外呼、不入帳或授權重付。
+
+PAYUNi [一次表單交付](../buyer/04-orders-and-payment.md#3b-payuni-一次表單交付)僅原下單會員可用；本角色沒有代付權，前景返回不表示付款成功。
+
+PAYUNi 原付款觀察另有內部採用元件，但本角色無採用入口；讀取狀態不會觸發入帳或重新查詢。
+
+原 sandbox 綁定的[能力查詢／歷史](../platform/16-payuni-capability.md)僅限具綁定管理權的平台管理員；本角色不能同步或宣告商家可收款。
+
+既有商家的[管理員確認核實](../platform/12-payuni-verification.md)可免圖片，但仍僅限平台具權限管理員；本角色不能自行核准，也不因此取得收款資格。
+
+PAYUNi sandbox 契約實驗僅供具權限的平台管理員使用；本角色無管理入口。
+`query-capture` 亦只供平台查原交易請款、最後退款與剩餘額度觀察，不授予本角色外呼權，不改付款或退款狀態。
+付款設定[判讀查閱／留存](../platform/15-payuni-payment-settings.md)僅供有權限的平台管理員使用；sandbox 可由管理員直接確認免附文件，本角色不能代為確認或藉此啟用收款。
+付款設定原件 `payment_settings` 由平台沿[私有證據 API](../platform/11-payuni-evidence.md)收件；本角色無原件權限，收件不代表可付款。
+詳見 [平台實驗 API](../platform/14-payuni-contract-lab.md)，它不會更新商城訂單或付款。
+原 UPP run 的 `query-trade` 亦僅限平台人工唯讀查詢，不授予賣家查詢其他商家或實驗紀錄的權限。
+缺欄位後的 `diagnose-trade` 亦僅限平台人工取證，不提供賣家入口。
+新版解析器的 `verify-query-parser` 同樣僅限平台一次唯讀驗收，不提供賣家入口。
+
+原 A2 交付歸屬查核由具獨立權限的平台管理員操作；賣家不能以撤回解除交付占用或自行核准。
+
+新商家自動配號初期由 [平台代建](../platform/10-payuni-applications.md#自動配號的新建店申請)，
+賣家沒有對應新建店入口。店主可沿用本店申請查閱／撤回；既有 MerID 提交流程不變。
+
+付款讀回的 `payuni_query` 只公開最新本地查核摘要，沿用同一會員授權；matched 不是已付款，GET 不發動金流查詢。
+
+[買家付款讀回](../buyer/04-orders-and-payment.md#3a-查核本地付款) 只限下單會員本人；賣家身分不授予讀取客戶主訂單付款的權利。
+
 路由前綴：`seller/`（完整路徑為 `/api/seller/...`）
 認證：**會員 token**（`Authorization: Bearer {member_token}`）
 
@@ -35,7 +65,7 @@
 `manageBankAccount`）**不檢查 `shop.manage`**：那些是店主對自己店面的固有權利，
 不是可以被收回的授權。要收回請停權店面，不是拿掉權限。
 
-`seller` 角色的五個權限對應到端點：
+`seller` 角色的六個權限對應到端點：
 
 | 權限 | 管到哪些端點 |
 | --- | --- |
@@ -44,7 +74,7 @@
 | `order.fulfill` | 訂單查詢、出貨、退貨處理、取消回應、對話、拒付抗辯（[05](05-orders-and-shipping.md)、[06](06-returns-and-refunds.md)、[07](07-payouts.md)、[08](08-reviews-and-messages.md)） |
 | `payout.view` | 撥款查詢（[07](07-payouts.md)） |
 | `review.reply` | 評價列表與回覆（[08](08-reviews-and-messages.md)） |
-| `shop.manage` | **目前沒有端點檢查它** —— 店面維護走擁有權。保留給日後的多人店面 |
+| `shop.manage` | PAYUNi 本店申請、撤回與歷史查閱（另需店主身分；[10](10-payuni-applications.md)）；一般店面維護仍走擁有權 |
 
 > 一人多店在第一階段**不支援**（單店、單倉，§1.5）。但授權模型已經是「角色綁店面」，
 > 因此端點一律要求 `shop_id` 或以路由參數帶店面，不從 token 推。
@@ -71,7 +101,27 @@
 
 ## 端點總表
 
-共 80 條路由，全部需要會員 token。
+共 90 條路由，全部需要會員 token。
+
+### PAYUNi 商家申請（S-10.1a）
+
+| 方法 | 路徑 | 閘門 | 文件 |
+| --- | --- | --- | --- |
+| GET | `seller/shops/{shop}/payuni-applications` | 店主＋本店 `shop.manage` | [10](10-payuni-applications.md) |
+| POST | `seller/shops/{shop}/payuni-applications` | 店主＋本店 `shop.manage` | [10](10-payuni-applications.md) |
+| GET | `seller/shops/{shop}/payuni-applications/{payuniApplication}` | 店主＋本店 `shop.manage` | [10](10-payuni-applications.md) |
+| POST | `seller/shops/{shop}/payuni-applications/{payuniApplication}/withdraw` | 店主＋本店 `shop.manage` | [10](10-payuni-applications.md) |
+
+這些端點只處理本地申請，不提供核實、核實原值查閱、解除、證據原件或支付資格；銀行驗證也不能代替商家歸屬核實。
+
+### PAYUNi 開通（平台代建，S-10.1i）
+
+| 方法 | 路徑 | 閘門 | 文件 |
+| --- | --- | --- | --- |
+| GET | `seller/shops/{shop}/payuni-onboarding` | 店主＋本店 `shop.manage` | [11](11-payuni-onboarding.md) |
+| POST | `seller/shops/{shop}/payuni-onboarding` | 店主＋本店 `shop.manage` | [11](11-payuni-onboarding.md) |
+| GET | `seller/shops/{shop}/payuni-home-sender` | 店主＋本店 `shop.manage` | [11](11-payuni-onboarding.md) |
+| POST | `seller/shops/{shop}/payuni-home-sender` | 店主＋本店 `shop.manage` | [11](11-payuni-onboarding.md) |
 
 ### 開店申請（S-01、S-10）
 | 方法 | 路徑 | 閘門 | 文件 |
@@ -107,6 +157,7 @@
 ### 商品與規格（S-04）
 | 方法 | 路徑 | 閘門 | 文件 |
 | --- | --- | --- | --- |
+| GET | `seller/categories` | 會員 token | [03](03-products-and-skus.md#0-可選商品分類) |
 | GET | `seller/products` | `product.manage` @ 本店 | [03](03-products-and-skus.md#1-商品列表) |
 | POST | `seller/products` | `product.manage` @ 本店 | [03](03-products-and-skus.md#2-建立商品草稿) |
 | GET | `seller/products/{product}` | 店主 | [03](03-products-and-skus.md#3-商品詳情與送審檢核) |
@@ -140,6 +191,7 @@
 | GET | `seller/orders` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#1-訂單列表) |
 | GET | `seller/orders/{orderNo}` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#2-訂單詳情) |
 | POST | `seller/orders/{orderNo}/shipping-label` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#3-建立物流單號印單) |
+| POST | `seller/orders/{orderNo}/payuni-label` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#3a-payuni-出貨單付款頁物流訂單) |
 | POST | `seller/orders/{orderNo}/ship` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#4-確認出貨) |
 | PATCH | `seller/orders/{orderNo}/shipment` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#5-更正物流單號) |
 | POST | `seller/orders/{orderNo}/handover` | `order.fulfill` @ 本店 | [05](05-orders-and-shipping.md#6-自取交付) |
@@ -208,3 +260,10 @@
 3. **應付金額在付款成功後凍結**（§11.3）。全額退款也不會讓它變小，
    所以**任何營收數字都不可以由訂單列表自行加總**。要金額請用
    [報表](09-reports.md)，那裡只有一條算式。
+
+未知或缺少完整成功證據的付款不推進待出貨，也不改庫存；賣家沒有手動確認收款的旁路。
+詳見 [本地付款觀察](../../integration/payment-observations.md)。
+> 退款執行界線（§14.4.3）：平台現有執行入口只允許 local／testing 的 demo 模擬；PAYUNi 等真實付款不得靠手填識別結案。demo 完成文案會明示未向金流送出退款，不代表實際入帳；本角色不取得財務執行權。詳見[平台退款說明](../platform/07-finance.md#3-執行退款財務)。
+
+撥款同樣不以模擬結果代替外部入帳（§14.9.3）：現有財務 API／排程只接受本地 demo；本角色不取得執行權。
+撥款讀回的 `execution_notice` 區分模擬／待核實／非正額遞延；真實付款不顯示模擬預計入帳日，見[撥款說明](../seller/07-payouts.md)。

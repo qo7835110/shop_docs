@@ -79,11 +79,12 @@ GET platform/system-parameters
 - `business_day`（6 項）—— 賣家義務與平台作業：`ship_deadline_days`、
   `seller_return_response_days`、`seller_inspection_days`、`buyer_cancel_response_days`、
   `dispute_resolution_days`、`chargeback_response_days`。
-- `calendar_day`（10 項）—— 買家權利：`return_window_days`、`delivery_confirm_days`、
+- `calendar_day`（13 項）—— 買家權利與日曆期限：`return_window_days`、`delivery_confirm_days`、
   `buyer_return_ship_days`、`store_pickup_days`、`payout_hold_days`、
   `review_window_days`、`violation_window_days`、`pickup_failure_window_days`、
-  `violation_appeal_days`、`settlement_cycle_days`。
-- `null`（18 項）—— 其餘非天數參數（分鐘、小時、年、比率、布林、列舉、代碼）。
+  `violation_appeal_days`、`settlement_cycle_days`、`data_export_retention_days`、
+  `payuni_refund_window_days`、`payuni_grant_overdue_days`。
+- `null`（37 項）—— 其餘非天數參數（分鐘、秒、小時、年、百分比、比率、布林、列舉、代碼）。
 
 畫面上顯示「3 天」時請一併標示單位；要顯示實際到期日，**一律用訂單／申請上的
 `*_at` 欄位**，不要自行加天數。
@@ -124,9 +125,27 @@ GET platform/system-parameters
 | `favorite_notify_enabled` | boolean | — | true | 收藏商品的降價／補貨通知 |
 | `featured_slot_limit` | integer | — | 12 | 單一工會推薦版位上限 |
 | `account_activation_hours` | integer | — | 72 | 啟用連結有效時數 |
+| `password_reset_link_minutes` | integer | — | 60 | 自助重設密碼連結有效分鐘數 |
+| `admin_token_lifetime_minutes` | integer | — | 720 | 平台管理員登入 token 絕對時效（分鐘） |
+| `admin_token_idle_minutes` | integer | — | 30 | 平台管理員登入 token 閒置時限（分鐘） |
+| `member_token_lifetime_minutes` | integer | — | 43200 | 會員登入 token 絕對時效（分鐘，30 天） |
+| `member_token_idle_minutes` | integer | — | 10080 | 會員登入 token 閒置時限（分鐘，7 天） |
 | `member_sync_stale_hours` | integer | — | 48 | 會務同步逾此時數即視為異常，暫停以會籍為條件的處置（§U-05.3） |
+| `member_sync_source_shrink_threshold_percent` | integer | — | 50 | 可讀來源名冊較上一合格批次縮減達此比例時，中止整輪同步並告警（§U-05.3） |
+| `member_sync_resignation_threshold_percent` | integer | — | 50 | 本輪預計將尚未退會會籍轉為退會達此比例時，中止整輪同步並告警（§U-05.3） |
+| `member_sync_safety_minimum_affected_count` | integer | — | 20 | 來源縮減或預計退會至少達此筆數時，百分比安全門才生效（§U-05.3） |
 | `settlement_cycle_days` | integer | 日曆天 | 7 | 結算檔預期出檔間隔 |
 | `data_export_retention_days` | integer | 日曆天 | 30 | 個資匯出檔的保留天數；逾期自動清理（§X-04.4） |
+| `payuni_capability_ttl_seconds` | integer | — | 0 | A3 能力觀察的本地最長新鮮秒數，自查詢開始計；**0 表示未配置，一律拒絕查詢與採用**（§S-10.1d） |
+| `payuni_capability_query_timeout_seconds` | integer | — | 0 | 單次 A3 工作從開始到回應的本地最長秒數；**0 表示未配置**，晚到的結果仍留觀察但不得採用（§S-10.1d） |
+| `payuni_payment_observation_ttl_seconds` | integer | — | 0 | M3 觀察首次入帳的本地最長秒數，自查核工作開始計；**0 表示未配置，不可入帳**，等於截止亦拒絕；不影響既存事件重播（§12.1） |
+| `payuni_refund_preflight_ttl_seconds` | integer | — | 0 | 退款送出前 M3 本地最長新鮮秒數，自查核工作開始計；**0 表示未配置，拒絕使用**。只供本地預檢，不代表已取得退款送出權（§14.4.3） |
+| `payuni_refund_window_days` | integer | 日曆天 | 180 | 原付款 session 台北建立日為第 1 日的本地保守退款期限；允許 0–180，0 停用。不是 PAYUNi 請款完成日，不延長供應商期限、不縮短買家退貨權益（§14.4.3） |
+| `payuni_grant_overdue_days` | integer | 日曆天 | 30 | 已付款逾此日數仍未送出 PAYUNi 撥款指示、且無已處理退款的交易，每日彙整一筆 `payout` 告警；0 停用，限 0–365。暫定處理：假設 PAYUNi 除退款觸發外不自動撥款，不是供應商保留期限（§14.9.3） |
+| `payuni_expiry_precheck_grace_minutes` | integer | — | 15 | 已交付 PAYUNi 付款表單的待付款訂單，逾期後先寬限的分鐘數；期滿以單次原付款查核決定採用付款或取消（查不出仍取消並告警）。限 0–60；開關 `PAYUNI_EXPIRY_PRECHECK_ENABLED`（§14.2） |
+| `payuni_unnotified_check_delay_minutes` | integer | — | 2 | PAYUNi 付款頁到期後仍未收到付款通知、付款也無結果時，再等幾分鐘以固定工作鍵主動查核一次原交易；查到已付款即採用，否則交給逾期前查核。限 1–60（業主 2026-10-18：正式區不重送付款通知，D7-1）。開關 `PAYUNI_UNNOTIFIED_CHECK_ENABLED` |
+| `payuni_logistics_query_interval_seconds` | integer | — | 0 | 每筆原物流單排程查詢的本地最短間隔（秒）；0 未配置，不輪詢。間隔與查詢工作一併快照，縮短設定不縮短既有保留間隔；不是供應商頻率承諾（§S-12.1） |
+| `payuni_store_map_ttl_seconds` | integer | — | 1800 | 選店工作的本地有效秒數，限1–2147483647；保存當期參數版本與期限，改值不延長原工作，不代表供應商保證（§S-12.2） |
 | `shop_image_max_kb` | integer | — | 5120 | 店面 Logo 與封面的單檔大小上限（KB）（§S-03.1） |
 | `shop_document_max_kb` | integer | — | 5120 | 開店申請附件的單檔大小上限（KB）（§S-01） |
 | `shop_announcement_limit` | integer | — | 3 | 單一店面同時可發布的公告數上限（§S-13） |
@@ -135,14 +154,47 @@ GET platform/system-parameters
 | `attachment_max_kb` | integer | — | 5120 | 評價照片與對話附件的單檔大小上限（KB）（§13.7） |
 | `return_photo_limit` | integer | — | 5 | 退貨申請與驗收各可上傳的照片張數上限（§B-03、§S-07） |
 | `return_photo_max_kb` | integer | — | 5120 | 退貨佐證與驗收照片的單檔大小上限（KB）（§B-03） |
+| `payuni_evidence_max_kb` | integer | — | 5120 | PAYUNi 私有歸屬／授權證據的單檔大小上限（KB）；不壓縮、不截斷（§S-10.1b、§13.7） |
 
-**共 43 項。** 最後八項是**上傳限制**，全部以 KB 或張數計，`day_unit` 恆為 `null`。
+**共 62 項。** 最後九項是**上傳限制**，全部以 KB 或張數計，`day_unit` 恆為 `null`。
 它們散見於各自的端點文件，但調整時看的是這張表 —— 不列在這裡，等於營運知道有這個
 限制卻找不到在哪裡改。
 
-`account_activation_hours` 與 `member_sync_stale_hours` **以小時計，
-因此 `day_unit` 為 `null`**：前者是連結時效（安全性），後者是資料健康度，
-兩者都不屬於 §13.3.1 的期限體系 —— 混進工作天判定會讓連結在連假後才過期。
+`payuni_payment_observation_ttl_seconds` 是 M3 首次入帳的本地採用時效，與 A3 能力 TTL 不共用。
+預設 0 拒絕首次採用；設定正值不是開啟收款或供應商時效保證。
+詳見[原通知採用與中斷恢復](../../ops/payuni-upp-notification-adoption.md)。
+
+`payuni_refund_preflight_ttl_seconds` 獨立控制退款前查核，不沿用付款入帳或 A3 時效。
+
+`payuni_refund_window_days` 限 0–180；預設 180 是本地保守政策，不推定供應商請款完成時間。
+截止為原 session 台北建立日零時加 N 個日曆日（轉 UTC 保存），等於截止即停止自動外送並保留人工核對。
+占用保存參數版本、天數與截止時間；再次檢查發現改版時停止，不延長原占用、不換鍵重送。
+設定正數不會啟用退款、不保證供應商餘額在此期間不變，也不取代原交易互斥、退款期限與憑證驗證。
+
+兩個 `payuni_capability_*_seconds` 也**沒有任何公開端點**會用到，而且預設值 `0`
+與其他參數不同：它不是建議值，是「還沒有人決定過」。A3 不提供供應商端的狀態時點，
+文件也沒說一次查詢的結果可以信多久 —— 在營運把這兩個值設成正數以前，能力查詢
+與能力採用一律拒絕，而不是退回一個猜出來的秒數（§S-10.1d）。
+設好了也只代表「這個因素可以用」，不代表可以收款：
+完整邊界見 [docs/integration/payuni-capability-sync.md](../../integration/payuni-capability-sync.md)。
+
+`payuni_evidence_max_kb` 目前**沒有任何公開端點**會用到：私有證據只由平台內部的
+Service 收件（§S-10.1b）。它先進總表，是因為調整上限的人看的就是這張表，而超過
+上限的檔案是被整份拒絕、不是被截斷 —— 截斷過的證據不再是那份文件。
+收件與保管的完整邊界見 [docs/integration/payuni-merchant-evidence.md](../../integration/payuni-merchant-evidence.md)。
+
+`account_activation_hours` 與 `member_sync_stale_hours` **以小時計**、`password_reset_link_minutes`
+以分鐘計，**因此 `day_unit` 皆為 `null`**：前兩者是連結時效（安全性），`member_sync_stale_hours` 是資料健康度，
+三者都不屬於 §13.3.1 的期限體系 —— 混進工作天判定會讓連結在連假後才過期。
+
+四個 `*_token_*_minutes` 同樣以分鐘計、`day_unit` 為 `null`。它們在**登入當下**凍結到 token 上，
+調整只影響之後的登入，不追溯已核發的 token。硬約束：兩者皆須至少 1 分鐘，且閒置時限不得大於絕對時效
+（否則等於沒有閒置時限），違反回 422。
+
+兩個 `member_sync_*_threshold_percent` 必須介於 1～100，且只有影響筆數達
+`member_sync_safety_minimum_affected_count`（至少為 1）才觸發。前者比較上一輪合格批次與
+本輪可讀來源筆數，後者比較本輪預計退會數與目前尚未退會、且受同步管轄的商城會籍。
+任一達門檻時，整輪會在任何會籍異動前中止，執行紀錄與作業告警會保存預檢摘要。
 
 `data_export_retention_days` 同樣不在 §13.3 的表上，補進來的依據有兩個：
 下載端點的合約本來就寫著「檔案已過期或清理」是它的兩種 404 之一
@@ -196,6 +248,28 @@ PATCH platform/system-parameters/{key}
 # 費率規則
 
 `fee_rule` 決定金流手續費、平台服務費與工會分潤怎麼算（§13.1）。
+
+## 每一種 fee_type 都必須有 platform 層兜底，而 0 是一種費率
+
+缺少兜底時結帳與撥款一律**報錯**，不得以 0 代入 —— 以 0 代入等於平台在無人察覺下
+免費提供服務，事後也分不出「當時費率是 0」與「當時沒有設定」（§13.1）。
+因此停用僅存的兜底會得到 422。
+
+**`union_share` 的初始營運預設是 `rate = 0`**（業主決策 2026-09-13）：它是一條
+明確的、有效的費率規則，不是「沒有設定」。日後調整經本節第 4 條新增**生效時點
+較晚的新版本**並留稽核，只影響生效後成立的訂單；既有訂單（包括原本就是 0 的）
+沿用下單當時的快照，舊的非零應收義務不因新預設而消失（§13.1、§13.1.1）。
+
+> `platform_fee` 與 `payment_fee` 不受這項決策影響，不會一起歸零。
+>
+> 初始化的 seeder 遇到既有的 platform 層規則會**跳過**，因此「重跑過 seeder」
+> 不能當作某個既有環境已經歸零的證據 —— 既有環境請以本節的端點確認與調整，
+> 商務設定不由 seeder 覆寫。
+>
+> **看到兜底是 0，不代表每一家店面的有效費率都是 0。** 解析順序是
+> `shop → category → organization → platform`，任何一層的覆寫都會先命中；
+> 要確認某家店面實際適用哪一條，請以該店面的範圍逐層查（第 3 條的 `scope_type`
+> 篩選），不能只看 platform 那一列。
 
 ## 3. 費率清單
 

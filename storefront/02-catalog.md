@@ -17,7 +17,7 @@ GET storefront/products
 | 參數 | 型別 | 說明 |
 | --- | --- | --- |
 | `keyword` | string | 最長 100 |
-| `category_id` | integer | 分類 |
+| `category_id` | integer | 分類。**給主分類時涵蓋其所有子分類**（商品一定掛在子分類）；可用值見[第 5 條分類導覽](#5-分類導覽) |
 | `organization_id` | integer | 限定某個工會的商城 |
 | `condition` | string | `new` \| `used` \| `refurbished` |
 | `is_handmade` | boolean | 手工製作 |
@@ -349,3 +349,65 @@ GET storefront/shops/{slug}/products
 
 放在 `meta` 而不是 `data`：`data` 只放領域資料（見[共通約定](../conventions.md)）——
 塞進去會讓「一個空陣列」變成「一個帶著字串的陣列」，而前端的迴圈會踩到它。
+
+會員價資格依 spec §13.5.2 檢查有效會籍與商城狀態，不能只判斷已登入或所屬組織。
+退會、會籍停權或商城停權後，`member_price` 為 null、`price_type` 為 `normal`，
+`price` 回原價；會員限定 SKU 的 `is_purchasable` 為 false。
+
+---
+
+## 5. 分類導覽
+
+```
+GET storefront/categories
+```
+
+不需 token，**不分頁**（plans/35 35-6）。前台主導覽「商品分類」（spec §3.1、§3.2）用的兩層樹。
+
+| 參數 | 型別 | 說明 |
+| --- | --- | --- |
+| `organization_id` | integer | 限定某個工會的商城；語意同商品搜尋的同名參數（**賣方**店面所屬組織） |
+
+### 回應 200
+
+```json
+{
+  "success": true,
+  "message": "取得商品分類。",
+  "data": [
+    {
+      "id": 1,
+      "code": "food",
+      "name": "食品",
+      "listed_product_count": 3,
+      "children": [
+        { "id": 6, "code": "packaged_food", "name": "包裝食品", "listed_product_count": 2 },
+        { "id": 7, "code": "fresh_food", "name": "生鮮食品", "listed_product_count": 1 }
+      ]
+    }
+  ],
+  "errors": null,
+  "meta": null
+}
+```
+
+### 只列有東西可看的分類
+
+分類與子分類**只在底下有前台可見的商品時出現**（已上架、店面營業中）——空分類在導覽上是死路。
+因此這棵樹會隨上下架變動，不要快取成固定選單；也不要拿它當賣家建商品時的分類選單（那是
+[`seller/categories`](../seller/03-products-and-skus.md#0-可選商品分類)）。
+
+- **停用的分類若仍有上架商品照樣出現**：停用是「新商品不能再選」，既有商品維持原分類（§P-09.1）。
+- 風險等級、禁售與狀態**不輸出**：那是審核與維護資訊。
+- 訪客與會員拿到同一棵樹：分類與件數不看會員價或會員限定資格。
+
+### `listed_product_count` 與搜尋同一個口徑
+
+點進 `storefront/products?category_id={id}` 得到的 `meta.pagination.total` 就是這個數字
+（未加其他篩選時）。主分類的件數是其子分類的總和。件數**含售完商品** —— 搜尋結果也含，只是排在後面。
+
+### 失敗
+
+| 狀態 | 情況 |
+| --- | --- |
+| 422 | `organization_id` 不是整數 |

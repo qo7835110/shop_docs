@@ -34,6 +34,8 @@ POST platform/auth/login
   "message": "登入成功。",
   "data": {
     "token": "12|xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "token_expires_at": "2026-10-18 22:00:00",
+    "token_idle_timeout_minutes": 30,
     "account": "platform.admin",
     "name": "平台管理者"
   },
@@ -43,6 +45,16 @@ POST platform/auth/login
 ```
 
 後續所有請求帶 `Authorization: Bearer {token}`。
+
+**token 有兩道時限**（plans/35 35-5），任一到了都會失效，之後的請求一律 401：
+
+| 時限 | 管理員預設 | 系統參數 |
+| --- | --- | --- |
+| 絕對時效（自登入起算），即 `token_expires_at` | 12 小時 | `admin_token_lifetime_minutes` |
+| 閒置時限（自最後一次請求起算），即 `token_idle_timeout_minutes` | 30 分鐘 | `admin_token_idle_minutes` |
+
+比會員短得多：平台 token 能執行退款與撥款，外洩的代價不對稱。兩個值在登入當下凍結到 token 上，
+事後調整只影響之後的登入。失效的 token 當場刪除，另有每日排程 `auth:prune-tokens` 清除未再使用的失效 token。
 
 ### 失敗
 
@@ -149,9 +161,10 @@ GET platform/permissions
 ```
 
 `module` 可直接拿來做畫面分群：`shop`、`product`、`inventory`、`order`、`refund`、
-`review`、`message`、`member`、`union`、`payout`、`settlement`、`risk`、`platform`。
+`review`、`message`、`member`、`union`、`payout`、`settlement`、`risk`、`platform`、
+`payuni`。
 
-完整清單（39 項）：
+完整清單（52 項）：
 
 | module | code |
 | --- | --- |
@@ -162,12 +175,35 @@ GET platform/permissions
 | refund | `return.request`、`refund.dispute`、`refund.process` |
 | review | `review.write`、`review.reply`、`review.moderate` |
 | message | `message.moderate` |
-| member | `member.view`、`member.manage`、`member.marketplace_dispose`、`member.identity.reveal` |
+| member | `member.view`、`member.manage`、`member.marketplace_dispose`、`member.account_issue`、`member.credential.offline`、`member.access_suspend`、`member.identity.reveal` |
 | union | `announcement.manage`、`featured_slot.manage` |
 | payout | `payout.view`、`payout.execute` |
 | settlement | `settlement.import`、`settlement.reconcile`、`chargeback.manage`、`adjustment.create`、`adjustment.approve` |
 | risk | `violation.view`、`violation.record`、`violation.manage` |
-| platform | `organization.manage`、`category.manage`、`fee_rule.manage`、`system_parameter.manage`、`role.manage`、`admin.manage`、`audit.view` |
+| platform | `organization.manage`、`organization.sync_binding`、`category.manage`、`fee_rule.manage`、`system_parameter.manage`、`role.manage`、`admin.manage`、`audit.view` |
+| operation | `operation_alert.all`、`operation_alert.finance`、`operation_alert.fulfillment` |
+| payuni | `payuni.application.manage`、`payuni.evidence.manage`、`payuni.evidence.read`、`payuni.binding.manage`、`payuni.binding.verify`、`payuni.credential.manage` |
+
+`payuni.credential.manage` 為獨立憑證登錄／本地撤銷權（§12.2），僅預設授予 `platform_admin`。
+只約束內部 Service，不提供讀取秘密的 API，不隱含付款或退款權，亦不由商家核實權取得。
+
+`payuni.binding.manage` 是平台解除生效綁定的獨立權限（§S-10.1c），初期只預設授予
+`platform_admin`；不包含核實、證據讀取或財務執行權。解除目前僅有本地 Service，公開端點待 31-2C。
+
+`payuni.binding.verify` 為獨立核實／拒絕權，僅預設授予 `platform_admin`。
+核實流程另需 `payuni.evidence.read`；核准改綁還需 `payuni.binding.manage`，
+拒絕申請不會解除既有綁定。初期允許同一位管理員建案、收件及核實，不要求第二人覆核。
+目前為本地核心，公開操作端點仍待 31-2C。
+
+> 清單以 `App\Support\Authorization\Permissions::all()` 為準，
+> `GET platform/permissions` 直接回傳它。本表先前漏列 `organization.sync_binding`
+> 且數量停在 39，已於階段 31-2B-2b 全數比對補齊。
+>
+> `payuni.evidence.manage`（登錄與作廢）與 `payuni.evidence.read`（讀取原件）
+> 於階段 31-2B-2c 加入，**兩者彼此不隱含**：收件的人不因此看得到既有原件，
+> 查閱的人也不因此能改寫證據事實（§S-10.1b）。本批**沒有任何公開端點**使用
+> 這兩項權限，它們目前只約束 Service 層的呼叫，先出現在目錄裡是為了讓角色
+> 預設授予與稽核從一開始就固定下來。
 
 ### 三組看起來相似、但**刻意分開**的權限（§P-07.4、§U-05.2）
 
@@ -178,9 +214,17 @@ GET platform/permissions
 | `shop.dispose`（暫停旗下店面與解除暫停） | `violation.manage`（記點、限制上架、裁定申訴） | 工會就能裁定自己所記的違規申訴，而申訴一律由平台裁定 |
 | `violation.record`（**建立**違規記錄） | `violation.manage`（**撤銷**與裁定） | 同上：記錄者兼裁定者，申訴程序就不存在了 |
 | `member.marketplace_dispose`（改 `marketplace_status`） | `member.manage`（改會籍主檔） | 工會就能改寫姓名、會員編號與會籍，而那是會務端的事實 |
+| `member.marketplace_dispose`（限制新交易） | `member.access_suspend`（撤銷憑證本身） | 工會就能把旗下任一會員鎖在門外，而那個人可能正在處理一張已付款訂單的退貨（§2.2.2） |
+| `member.account_issue`（核發帳號與重發憑證） | `member.credential.offline`（臨櫃列印初始密碼） | 工會經辦人手上就有一組可直接登入該會員的密碼 |
+| `shop.review`（**本工會**店面的開店審核，§U-02） | `payuni.application.manage`（PAYUNi 商家申請的提出與撤回）| 每一位審過店的人同時能替店面主張一個外部收款身分，而那條線的另一端是錢會流到哪裡（§S-10.1a）|
 
 > **持有 `shop.dispose` 不等於解得掉任何一筆暫停**：能不能解除由 `suspended_by_type`
 > 的層級決定（§11.2），權限與層級是兩道各自獨立的閘門。
+
+> **工會持有 `shop.review` 不等於能走平台代建**：工會的審核範圍以
+> `organization_id` 硬性限縮（§2.3、§15.3），平台代建與跨工會審核一律走平台後台
+> 自己的入口（§2.3 身分隔離）。`payuni.application.manage` 更是**平台專屬**，
+> 初期僅預設授予 `platform_admin`，且**不含核實權**（§S-10.1a）。
 
 ---
 

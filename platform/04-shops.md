@@ -106,6 +106,14 @@ GET platform/shops
 
 ---
 
+### 店面欄位補充
+
+| 欄位 | 說明 |
+| --- | --- |
+| `logo_url` / `cover_url` | 識別圖像網址；未設定為 `null`（§S-03.1）。回應不含儲存路徑。 |
+| `service_hours` | 客服可回應的時間，**純顯示**，不拘束任何期限（§S-03.2）。 |
+| `open_violation_count` / `open_violation_points` | **生效中**的違規記錄筆數與點數合計（§P-07.1）。只是指標；處置等級與門檻看 [08 處置現況](08-risk.md)。 |
+
 ## 2. 店面詳情
 
 ```
@@ -193,6 +201,8 @@ GET platform/shops/{shop}
 `review_history.reviewer_type` 為 `member`（工會管理者）或 `admin`（平台人員）。
 
 ---
+
+詳情同樣帶[第 1 條的店面欄位](#店面欄位補充)。
 
 ## 3. 代為建立開店申請
 
@@ -455,7 +465,7 @@ PATCH platform/shops/{shop}/bank-account/verify                      ← 已開�
 | --- | --- |
 | `account_number_masked` | **永遠只有遮罩值**。帳號在資料庫是加密儲存的，沒有解密端點；這個值由末四碼組出，全程不解密。 |
 | `verify_status` | `pending` \| `verified` \| `failed` |
-| `payout_ready` | 是否可作為撥款收款帳戶。 |
+| `payout_ready` | 此本地銀行帳戶是否可作為銀行收款帳戶；不代表 PAYUNi 原商家／UNi 受款或 grant 資格已核實（§14.9.1）。 |
 
 ### 失敗
 

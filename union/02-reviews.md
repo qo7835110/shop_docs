@@ -98,6 +98,9 @@ GET union/shop-applications
 }
 ```
 
+`created_by_type`：`member`（會員自行申請）\| `platform`（平台代建，§P-01）。只回身分類型、不回是哪位平台人員；
+審核規則兩者相同，代建也要經工會核准。
+
 ### 核准檢核清單
 
 `approval_checklist` 是**四項固定檢核**，順序固定，直接照著渲染即可：

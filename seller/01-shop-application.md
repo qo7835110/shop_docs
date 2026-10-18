@@ -125,7 +125,7 @@ GET seller/shop-applications/{application}
 
 比清單多三個區塊：`approval_checklist`、`pending_actions`、`review_history`。
 
-> **`review_history` 是新到舊**，最新的一筆在 `[0]`。倒過來讀會拿到最舊的
+> **`review_history` 是新到舊**，最新的一筆在 `[0]`；同秒紀錄按流水號由大到小排序。倒過來讀會拿到最舊的
 > 「送審」那一筆，而送審不必填理由 —— 於是 `reason` 是 `null`，
 > 看起來像是「理由沒有存進歷程」。那兩件事在畫面上長得一模一樣。
 
@@ -324,7 +324,7 @@ PUT seller/shop-applications/{application}/bank-account
 | `account_number_masked` | **永遠只有遮罩值**。帳號在資料庫是加密儲存的，**沒有解密端點** —— 連你自己也讀不回完整號碼（§S-10）。 |
 | `verify_status` | `pending` \| `verified` \| `failed`。**只有平台改得動它。** |
 | `verify_failed_reason` | 驗證失敗的原因，可直接顯示並引導更正。 |
-| `payout_ready` | 是否可作為撥款收款帳戶（撥款候選條件 5，§14.9.1）。 |
+| `payout_ready` | 此本地銀行帳戶是否可作為銀行收款帳戶；PAYUNi grant 另驗原商家／UNi 受款及適用能力，不能以本欄位取代（§14.9.1 條件 5）。 |
 
 > **改帳號會讓驗證失效。** 驗證的是那一組帳號，不是這個人 —— 改完要重新等平台驗證，
 > 而未通過驗證的店面不進撥款候選。因此**不要在有待撥款項時換帳號**。

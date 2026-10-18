@@ -56,8 +56,8 @@ GET seller/inventories
 | --- | --- | --- | --- |
 | `shop_id` | integer | ✅ | 你的店面 ID |
 | `product_id` | integer | — | 限定單一商品 |
-| `only_defective` | boolean | — | **只列有未處置瑕疵品的 SKU** —— 那是待辦清單 |
-| `only_low_stock` | boolean | — | **只列低於安全庫存的 SKU** |
+| `only_defective` | boolean | — | **只列有未處置瑕疵品的 SKU** —— 那是待辦清單。查詢字串接受 `1`／`true`／`0`／`false`，見[慣例 §2.1](../conventions.md#21-布林查詢參數) |
+| `only_low_stock` | boolean | — | **只列低於安全庫存的 SKU**。同上 |
 | `page` / `per_page` | integer | — | 見[共通約定](../conventions.md#分頁) |
 
 ### 低庫存的規則只有一條

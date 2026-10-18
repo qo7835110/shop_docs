@@ -143,6 +143,9 @@ POST platform/conversations/{conversation}/join
 
 ---
 
+回應的 `last_message_sender_role`（`buyer` \| `seller` \| `platform_cs`，沒有訊息時為 `null`）與買賣雙方收件匣同義，
+見 [buyer/08](../buyer/08-messages.md)。
+
 ## 4. 退出對話
 
 ```
@@ -203,6 +206,9 @@ GET platform/conversations/{conversation}/messages
 | `shop` | **這則訊息屬於哪一家店**。查證成立的下一步是 `POST platform/violations`，而那支端點要 `shop_id` —— 清單只給 `sender_id` 與 `conversation_id` 的話，`sender_type: member` 可能是買家也可能是賣家，於是**待查清單認不出被查的對象**。對話恆為「一位買家 × 一家店面」（§X-03.1），因此店面是對話的固有屬性。 |
 
 ---
+
+每則訊息帶 `sender_role`：`buyer` \| `seller` \| `platform_cs`。`sender_type` 只分得出會員與平台，
+分不出買賣雙方；訊息氣泡的左右請用 `sender_role`。
 
 ## 6. 客服發送訊息
 

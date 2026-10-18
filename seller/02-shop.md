@@ -126,6 +126,7 @@ GET seller/shops/{shop}/overview
 | `rating_avg` / `rating_count` | 評分快照。全額退款的評價**仍計入**（§B-04.4）。 |
 | `logo_url` / `cover_url` | 識別圖像的網址；未設定為 `null`，前台以預設樣式呈現（§S-03.1）。**回應不含儲存路徑。** |
 | `service_hours` | 客服可回應的時間。**純顯示** —— 見第 2 條。 |
+| `open_violation_count` / `open_violation_points` | 生效中的違規記錄筆數與點數合計。只是指標，處置等級看 `disposition_level`。 |
 
 ---
 

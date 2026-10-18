@@ -1,5 +1,38 @@
 # 工會後台 API
 
+平台財務的 [PAYUNi 商家日帳查詢](../platform/18-payuni-grant-query.md)需對帳權；本角色無批次、逐頁、逐列解析或原交易關聯入口，頁面收齊或關聯成功不代表已對帳或可撥款。
+
+平台財務另有 [PAYUNi 原付款查核](../platform/17-payuni-payment-query.md)，本角色不得使用；讀回付款狀態不外呼、不入帳或授權重付。
+
+PAYUNi [一次表單交付](../buyer/04-orders-and-payment.md#3b-payuni-一次表單交付)僅原下單會員可用；本角色沒有代付權，前景返回不表示付款成功。
+
+PAYUNi 原付款觀察另有內部採用元件，但本角色無採用入口；讀取狀態不會觸發入帳或重新查詢。
+
+原 sandbox 綁定的[能力查詢／歷史](../platform/16-payuni-capability.md)僅限具綁定管理權的平台管理員；本角色不能同步或宣告商家可收款。
+
+既有商家的[管理員確認核實](../platform/12-payuni-verification.md)可免圖片，但仍僅限平台具權限管理員；本角色不能自行核准，也不因此取得收款資格。
+
+PAYUNi sandbox 契約實驗僅供具權限的平台管理員使用；本角色無管理入口。
+`query-capture` 亦只供平台查原交易請款、最後退款與剩餘額度觀察，不授予本角色外呼權，不改付款或退款狀態。
+付款設定[判讀查閱／留存](../platform/15-payuni-payment-settings.md)僅供有權限的平台管理員使用；sandbox 可由管理員直接確認免附文件，本角色不能代為確認或藉此啟用收款。
+付款設定原件 `payment_settings` 由平台沿[私有證據 API](../platform/11-payuni-evidence.md)收件；本角色無原件權限，收件不代表可付款。
+詳見 [平台實驗 API](../platform/14-payuni-contract-lab.md)，它不會更新商城訂單或付款。
+原 UPP run 的 `query-trade` 亦僅限平台人工唯讀查詢，不授予工會管理員金流查詢或實驗管理權限。
+缺欄位後的 `diagnose-trade` 亦僅限平台人工取證，不提供工會入口。
+新版解析器的 `verify-query-parser` 同樣僅限平台一次唯讀驗收，不提供工會入口。
+
+原 A2 交付歸屬查核僅供具獨立權限的平台管理員操作，工會沒有核實或解除交付占用入口。
+
+[A2 自動配號申請](../platform/10-payuni-applications.md#自動配號的新建店申請) 初期由平台代建；
+工會無配號入口，管理工會的權限不等於平台的 `payuni.application.manage`。
+
+付款讀回的 `payuni_query` 只公開最新本地查核摘要，沿用同一會員授權；matched 不是已付款，GET 不發動金流查詢。
+
+[買家付款讀回](../buyer/04-orders-and-payment.md#3a-查核本地付款) 只限下單會員本人；工會管理權不授予讀取所屬會員付款的權利。
+
+工會管理權不隱含 PAYUNi 商家申請、核實、核實原值查閱或證據讀取權。
+申請由 [店主](../seller/10-payuni-applications.md) 或 [有獨立授權的平台管理員](../platform/10-payuni-applications.md) 操作，工會沒有對應路由。
+
 路由前綴：`union/`（完整路徑為 `/api/union/...`）
 認證：**會員 token**（`Authorization: Bearer {member_token}`）
 
@@ -152,3 +185,10 @@
 而應該依實際被拒（403）或由平台端提供的角色設定決定。
 
 > `union_admin` **不得授予平台預設組織的會籍**（該組織不承載店面，也沒有工會管理職能）。
+
+付款未知不列為成功營收，也不授予工會改寫付款結果的權限；詳見
+[本地付款觀察](../../integration/payment-observations.md)。
+> 退款執行界線（§14.4.3）：平台現有執行入口只允許 local／testing 的 demo 模擬；PAYUNi 等真實付款不得靠手填識別結案。demo 完成文案會明示未向金流送出退款，不代表實際入帳；本角色不取得財務執行權。詳見[平台退款說明](../platform/07-finance.md#3-執行退款財務)。
+
+撥款同樣不以模擬結果代替外部入帳（§14.9.3）：現有財務 API／排程只接受本地 demo；本角色不取得執行權。
+撥款讀回的 `execution_notice` 區分模擬／待核實／非正額遞延；真實付款不顯示模擬預計入帳日，見[撥款說明](../seller/07-payouts.md)。

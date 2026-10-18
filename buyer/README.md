@@ -1,5 +1,35 @@
 # 買家中心 API
 
+平台財務的 [PAYUNi 商家日帳查詢](../platform/18-payuni-grant-query.md)需對帳權；本角色無批次、逐頁、逐列解析或原交易關聯入口，頁面收齊或關聯成功不代表已對帳或可撥款。
+
+新增 [PAYUNi 一次表單交付](04-orders-and-payment.md#3b-payuni-一次表單交付)，僅原下單會員；
+仍須 sandbox 收款啟用及商家／設定／能力守衛，返回不表示付款成功。
+
+平台財務另有 [PAYUNi 原付款查核](../platform/17-payuni-payment-query.md)，本角色不得使用；讀回付款狀態不外呼、不入帳或授權重付。
+
+PAYUNi 原付款觀察另有內部採用元件，但本角色無採用入口；讀取狀態不會觸發入帳或重新查詢。
+
+原 sandbox 綁定的[能力查詢／歷史](../platform/16-payuni-capability.md)僅限具綁定管理權的平台管理員；本角色不能同步或宣告商家可收款。
+
+既有商家的[管理員確認核實](../platform/12-payuni-verification.md)可免圖片，但仍僅限平台具權限管理員；本角色不能自行核准，也不因此取得收款資格。
+
+PAYUNi sandbox 契約實驗僅供具權限的平台管理員使用；本角色無管理入口。
+`query-capture` 亦只供平台查原交易請款、最後退款與剩餘額度觀察，不授予本角色外呼權，不改付款或退款狀態。
+付款設定[判讀查閱／留存](../platform/15-payuni-payment-settings.md)僅供有權限的平台管理員使用；sandbox 可由管理員直接確認免附文件，本角色不能代為確認或藉此啟用收款。
+付款設定原件 `payment_settings` 由平台沿[私有證據 API](../platform/11-payuni-evidence.md)收件；本角色無原件權限，收件不代表可付款。
+詳見 [平台實驗 API](../platform/14-payuni-contract-lab.md)，它不會更新商城訂單或付款。
+原 UPP run 的 `query-trade` 亦僅限平台人工唯讀查詢；買家的付款狀態 GET 不會因此發動金流查詢。
+缺欄位後的 `diagnose-trade` 亦僅限平台人工取證，不提供買家入口。
+新版解析器的 `verify-query-parser` 同樣僅限平台一次唯讀驗收，不提供買家入口或重付許可。
+
+原 A2 交付歸屬查核僅供具獨立權限的平台管理員操作，買家沒有核實或解除交付占用入口。
+
+[A2 自動配號申請](../platform/10-payuni-applications.md#自動配號的新建店申請) 初期僅由平台代建；
+買家沒有配號權，會員 token 不能呼叫平台入口，申請狀態不代表可付款。
+
+買家不能指定收款 MerID，也不能操作商家申請、證據或綁定；不提供核實原值查閱。
+這些本地管理作業見 [賣家契約](../seller/10-payuni-applications.md)，不改變買家付款的資格檢查。
+
 路由前綴：`buyer/`（完整路徑為 `/api/buyer/...`）
 認證：**會員 token**（`Authorization: Bearer {member_token}`）
 
@@ -45,7 +75,7 @@
 
 ## 端點總表
 
-共 50 條路由，全部需要會員 token。
+共 54 條路由，全部需要會員 token。
 
 ### 個人資料、會籍與通知
 | 方法 | 路徑 | 文件 |
@@ -79,6 +109,8 @@
 | DELETE | `buyer/cart/items/{item}` | [03](03-cart-and-checkout.md#4-移除品項) |
 | POST | `buyer/checkout/preview` | [03](03-cart-and-checkout.md#5-結帳試算) |
 | POST | `buyer/checkout` | [03](03-cart-and-checkout.md#6-送出訂單) |
+| POST | `buyer/shops/{shop}/payuni-store-maps` | [03](03-cart-and-checkout.md#payuni-超商選店sandboxs-122) |
+| GET | `buyer/payuni-store-maps/{storeMap}` | [03](03-cart-and-checkout.md#payuni-超商選店sandboxs-122) |
 
 ### 訂單與付款
 | 方法 | 路徑 | 文件 |
@@ -86,6 +118,8 @@
 | GET | `buyer/orders` | [04](04-orders-and-payment.md#1-訂單列表) |
 | GET | `buyer/orders/{orderNo}` | [04](04-orders-and-payment.md#2-訂單詳情) |
 | POST | `buyer/orders/{orderNo}/payments` | [04](04-orders-and-payment.md#3-建立付款單) |
+| GET | `buyer/orders/{orderNo}/payment-status` | [04](04-orders-and-payment.md#3a-查核本地付款) |
+| POST | `buyer/orders/{orderNo}/payments/{paymentNo}/payuni-form` | [04](04-orders-and-payment.md#3b-payuni-一次表單交付) |
 | POST | `buyer/orders/{orderNo}/cancel` | [04](04-orders-and-payment.md#4-取消尚未付款的訂單) |
 | POST | `buyer/sub-orders/{orderNo}/confirm-receipt` | [04](04-orders-and-payment.md#5-確認收貨) |
 
@@ -150,3 +184,10 @@
 
 3. **自動確認收貨與退貨期限是兩條線。** 訂單自動完成之後，你**依然**可以在
    退貨期限前申請退貨 —— 兩者互不影響（§14.3）。
+
+付款未知不是失敗，原付款仍為 `created`，不得引導買家另建扣款；詳見
+[本地付款觀察](../../integration/payment-observations.md)。這不代表已接妥 PAYUNi 支付頁。
+> 退款執行界線（§14.4.3）：平台現有執行入口只允許 local／testing 的 demo 模擬；PAYUNi 等真實付款不得靠手填識別結案。demo 完成文案會明示未向金流送出退款，不代表實際入帳；本角色不取得財務執行權。詳見[平台退款說明](../platform/07-finance.md#3-執行退款財務)。
+
+撥款同樣不以模擬結果代替外部入帳（§14.9.3）：現有財務 API／排程只接受本地 demo；本角色不取得執行權。
+撥款讀回的 `execution_notice` 區分模擬／待核實／非正額遞延；真實付款不顯示模擬預計入帳日，見[撥款說明](../seller/07-payouts.md)。
