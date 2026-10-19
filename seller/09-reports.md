@@ -41,7 +41,7 @@ GET seller/shops/{shop}/reports/sales
   "data": {
     "basis": "淨銷售額 = Σ 應付金額 − Σ 已處理退款 − Σ 負向調整 (spec §11.3)",
     "scope": { "type": "shop", "id": 1 },
-    "period": { "from": "2026-08-01 00:00:00", "to": "2026-08-24 23:59:59" },
+    "period": { "from": "2026-07-31 16:00:00", "to": "2026-08-24 15:59:59", "from_date": "2026-08-01", "to_date": "2026-08-24", "timezone": "Asia/Taipei" },
     "gross_payable": 4800,
     "refunded_amount": 0,
     "negative_adjustment_amount": 0,
@@ -151,7 +151,7 @@ GET seller/shops/{shop}/reports/orders
 ```json
 {
   "basis": "淨銷售額 = Σ 應付金額 − Σ 已處理退款 − Σ 負向調整 (spec §11.3)",
-  "period": { "from": "2026-08-01 00:00:00", "to": "2026-08-24 23:59:59" },
+  "period": { "from": "2026-07-31 16:00:00", "to": "2026-08-24 15:59:59", "from_date": "2026-08-01", "to_date": "2026-08-24", "timezone": "Asia/Taipei" },
   "status_counts": { "awaiting_shipment": 5, "shipped": 2, "delivered": 1, "completed": 5, "refund_pending": 5, "pickup_returned": 1 },
   "net_sales": 4800,
   "shipment": { "awaiting_shipment": 5, "overdue_shipment": 0 }
@@ -175,7 +175,7 @@ GET seller/shops/{shop}/reports/refunds
 ```json
 {
   "attribution": "退款以結案日 (processed_at) 歸屬期間，不追溯原訂單期間 (spec §S-09)。",
-  "period": { "from": "2026-08-01 00:00:00", "to": "2026-08-24 23:59:59" },
+  "period": { "from": "2026-07-31 16:00:00", "to": "2026-08-24 15:59:59", "from_date": "2026-08-01", "to_date": "2026-08-24", "timezone": "Asia/Taipei" },
   "total_amount": 0,
   "by_reason": []
 }
@@ -230,7 +230,7 @@ POST seller/shops/{shop}/reports/export
   "data": {
     "id": 1,
     "row_count": 19,
-    "period": { "from": "2026-08-01 00:00:00", "to": "2026-08-24 23:59:59" },
+    "period": { "from": "2026-07-31 16:00:00", "to": "2026-08-24 15:59:59", "from_date": "2026-08-01", "to_date": "2026-08-24", "timezone": "Asia/Taipei" },
     "generated_at": "2026-08-24T05:20:00+08:00",
     "download_count": 0,
     "last_downloaded_at": null,

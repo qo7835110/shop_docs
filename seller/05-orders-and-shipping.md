@@ -276,7 +276,7 @@ POST seller/orders/{orderNo}/ship
 | --- | --- | --- | --- |
 | `carrier` | string\|null | — | 已登記的代碼；**已印單時可省略** |
 | `tracking_number` | string\|null | — | 最長 64；同上 |
-| `shipped_at` | date\|null | — | **不得晚於現在**（可回填，不可預填） |
+| `shipped_at` | date\|null | — | **不得晚於現在**（可回填，不可預填）（台北時間，見 [conventions](../conventions.md#時間)） |
 
 **回應 201**，`data` 為訂單（`status` 為 `shipped`），`message`：`已確認出貨。`
 

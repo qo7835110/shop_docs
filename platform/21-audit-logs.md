@@ -21,7 +21,7 @@ GET platform/audit-logs
 | `actor_id` | integer | 操作者識別碼；system 操作沒有 |
 | `auditable_type` | string | 最長 100，稽核對象種類，如 `member`、`shop`、`refund`、`payout` |
 | `auditable_id` | integer | 稽核對象識別碼 |
-| `created_from` | string | `Y-m-d`，寫入日（含）起 |
+| `created_from` | string | `Y-m-d`，寫入日（含）起；**台北日**，見[共通約定](../conventions.md#時間) |
 | `created_to` | string | `Y-m-d`，寫入日（含）止；須不早於 `created_from` |
 | `page` / `per_page` | integer | 見[共通約定](../conventions.md#分頁) |
 

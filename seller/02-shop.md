@@ -329,7 +329,7 @@ POST  seller/shops/{shop}/announcements/{announcement}/unpublish
 | `content` | string | ✅ | 最長 2000，**純文字** |
 | `status` | string | — | `draft` \| `published`（預設 `draft`） |
 | `is_pinned` | boolean | — | 置頂 |
-| `published_from` / `published_until` | datetime\|null | — | `published_until` 必須晚於 `published_from` |
+| `published_from` / `published_until` | datetime\|null | — | `published_until` 必須晚於 `published_from`（台北時間，見 [conventions](../conventions.md#時間)） |
 
 **回應 201**，`data` 為公告，`message`：`公告已建立。`
 

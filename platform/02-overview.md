@@ -42,7 +42,7 @@ GET platform/overview
     "sales": {
       "basis": "net = Σ payable − Σ processed refunds − Σ negative adjustments",
       "scope": { "type": "platform", "id": null },
-      "period": { "from": "2026-08-01 00:00:00", "to": "2026-08-18 23:59:59" },
+      "period": { "from": "2026-07-31 16:00:00", "to": "2026-08-18 15:59:59", "from_date": "2026-08-01", "to_date": "2026-08-18", "timezone": "Asia/Taipei" },
       "gross_payable": 1284500,
       "refunded_amount": 32600,
       "negative_adjustment_amount": 1200,

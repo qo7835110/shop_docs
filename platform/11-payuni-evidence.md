@@ -19,7 +19,7 @@ POST platform/shops/{shop}/payuni-applications/{payuniApplication}/evidence
 | `purpose` | 是 | `provider_record`、`owner_authorization` 或 `payment_settings` |
 | `source_kind` | 是 | 歸屬資料／付款設定搭配 `provider_portal`／`provider_document`；授權文件只接受 `owner_document` |
 | `file` | 是 | 實際 PDF／JPEG／PNG；伺服器辨識 bytes，大小上限由 `payuni_evidence_max_kb` 決定（預設 5120 KB） |
-| `acquired_at` | 是 | 嚴格 `Y-m-d H:i:s`，來源取得時間；不是系統核實時間 |
+| `acquired_at` | 是 | 嚴格 `Y-m-d H:i:s`，**UTC**（不轉換台北時間，見 [conventions](../conventions.md#時間)），來源取得時間；不是系統核實時間 |
 | `valid_until` | 否 | 嚴格 `Y-m-d`；未提供或 null 代表未聲稱期限 |
 | `idempotency_key` | 是 | 正規小寫 UUID；同主體、同案、同鍵及相同內容／metadata 重播回同一版本 |
 

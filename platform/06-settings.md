@@ -37,7 +37,7 @@ GET platform/system-parameters
       "effective_from": "2026-01-01 00:00:00",
       "description": "賣家出貨期限；逾時自動取消並全額退款",
       "scheduled_changes": [
-        { "value": 5, "effective_from": "2026-09-01 00:00:00" }
+        { "value": 5, "effective_from": "2026-08-31 16:00:00" }
       ]
     },
     {
@@ -130,6 +130,9 @@ GET platform/system-parameters
 | `admin_token_idle_minutes` | integer | — | 30 | 平台管理員登入 token 閒置時限（分鐘） |
 | `member_token_lifetime_minutes` | integer | — | 43200 | 會員登入 token 絕對時效（分鐘，30 天） |
 | `member_token_idle_minutes` | integer | — | 10080 | 會員登入 token 閒置時限（分鐘，7 天） |
+| `payuni_auto_reconcile_delay_minutes` | integer | — | 60 | PAYUNi 付款成功後逾此分鐘數才自動查核並採用對帳（1–1440；Plan36） |
+| `payuni_auto_grant_max_trade_amount` | integer | — | 50000 | 自動撥款指示的單筆原付款金額上限（TWD）；超過即整張不自動送出 |
+| `payuni_auto_grant_daily_max_amount` | integer | — | 300000 | 撥款指示每日（台北日）送出合計上限（TWD，含人工）；超過即不自動送出 |
 | `member_sync_stale_hours` | integer | — | 48 | 會務同步逾此時數即視為異常，暫停以會籍為條件的處置（§U-05.3） |
 | `member_sync_source_shrink_threshold_percent` | integer | — | 50 | 可讀來源名冊較上一合格批次縮減達此比例時，中止整輪同步並告警（§U-05.3） |
 | `member_sync_resignation_threshold_percent` | integer | — | 50 | 本輪預計將尚未退會會籍轉為退會達此比例時，中止整輪同步並告警（§U-05.3） |
@@ -156,7 +159,7 @@ GET platform/system-parameters
 | `return_photo_max_kb` | integer | — | 5120 | 退貨佐證與驗收照片的單檔大小上限（KB）（§B-03） |
 | `payuni_evidence_max_kb` | integer | — | 5120 | PAYUNi 私有歸屬／授權證據的單檔大小上限（KB）；不壓縮、不截斷（§S-10.1b、§13.7） |
 
-**共 62 項。** 最後九項是**上傳限制**，全部以 KB 或張數計，`day_unit` 恆為 `null`。
+**共 65 項。** 最後九項是**上傳限制**，全部以 KB 或張數計，`day_unit` 恆為 `null`。
 它們散見於各自的端點文件，但調整時看的是這張表 —— 不列在這裡，等於營運知道有這個
 限制卻找不到在哪裡改。
 
@@ -214,7 +217,7 @@ PATCH platform/system-parameters/{key}
 | 欄位 | 型別 | 必填 | 說明 |
 | --- | --- | --- | --- |
 | `value` | any | ✅ | 新值。型別須符合該參數的 `value_type` |
-| `effective_from` | date\|null | — | 生效時點。**省略為立即生效** |
+| `effective_from` | date\|null | — | 生效時點（台北時間，見 [conventions](../conventions.md#時間)）。**省略為立即生效** |
 | `reason` | string\|null | — | 最長 255，寫入稽核 |
 
 ```json
@@ -355,8 +358,8 @@ POST platform/fee-rules
 | `basis` | string | ✅ | `goods_amount` \| `goods_plus_shipping` \| `total_amount` |
 | `rounding` | string | ✅ | `round` \| `floor` \| `ceil` |
 | `refund_behavior` | string | ✅ | `proportional` \| `non_refundable` |
-| `effective_from` | date | ✅ | 生效起始 |
-| `effective_to` | date\|null | — | 生效結束；`null` 為無限期 |
+| `effective_from` | date | ✅ | 生效起始（台北時間，見 [conventions](../conventions.md#時間)）；只給日期＝台北當天 00:00 |
+| `effective_to` | date\|null | — | 生效結束（台北時間，見 [conventions](../conventions.md#時間)）；`null` 為無限期。只給日期＝台北當天 **00:00** 起失效，要含當天整天請給隔天 |
 
 ```json
 {
@@ -478,8 +481,8 @@ POST platform/shipping-rates
 | `free_threshold` | integer\|null | — | 滿額免運門檻（≥ 1） |
 | `remote_surcharge` | integer\|null | — | 偏遠加價，預設 0 |
 | `enabled` | boolean | — | 預設 `true` |
-| `effective_from` | date | ✅ | — |
-| `effective_to` | date\|null | — | — |
+| `effective_from` | date | ✅ | 台北時間，同費率 |
+| `effective_to` | date\|null | — | 台北時間，同費率 |
 
 ```json
 {

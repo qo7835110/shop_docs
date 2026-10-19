@@ -489,7 +489,7 @@ PAYUNi 必須另接具商家、環境、來源種類、完整日期範圍及分�
 | `lines[].provider_transaction_id` | string | ✅ | 最長 64 |
 | `lines[].amount` | integer | ✅ | 整數 TWD |
 | `lines[].fee` | integer | — | 手續費 |
-| `lines[].settled_at` | date\|null | — | 撥付日 |
+| `lines[].settled_at` | date\|null | — | 撥付日（台北時間，見 [conventions](../conventions.md#時間)）；只給日期＝台北當天 00:00 |
 
 ```json
 {

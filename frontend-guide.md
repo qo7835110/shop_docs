@@ -16,7 +16,7 @@
 2. **兩種身分、兩套 token，不能混用。** 會員（買家、賣家、工會管理者）用 `POST auth/login`，打 `storefront/`、`buyer/`、`seller/`、`union/`；平台人員用 `POST platform/auth/login`，只打 `platform/`。拿錯 token 會在認證層就回 401。會員 token 代表「一筆會籍」：同一個人在兩個工會是兩個帳號，沒有切換身分的端點。
 3. **登入後先看 `must_change_password`。** 為 true 表示仍是初始密碼，前端應強制導向改密碼（`POST auth/password`）；後端不會替你擋其他端點。
 4. **金額一律整數新台幣，由後端計算。** 前端送出的金額只用來比對（例如結帳的 `expected_payable_amount`），不會被採用。不要自行加總成營收。
-5. **時間格式不一致，請依欄位文件解讀。** 多數欄位為 `YYYY-MM-DD HH:MM:SS`；PAYUNi 相關欄位（付款狀態、能力查詢等）為 UTC 或 ISO 8601 含時區。顯示到期日時一律用回應裡的 `*_at` 欄位，不要自己加天數（工作天與日曆天規則不同）。
+5. **時間一律是 UTC，顯示前要轉台北時間。** 多數欄位為 `YYYY-MM-DD HH:MM:SS`，**是 UTC 且不帶時區標記**（加 8 小時才是台北時間）；部分欄位為 ISO 8601 含時區偏移。日期篩選（`Y-m-d`）則以**台北日**計；報表的 `period` 另帶 `from_date`／`to_date`（台北日期）。見 [conventions.md 時間](conventions.md#時間)。顯示到期日時一律用回應裡的 `*_at` 欄位，不要自己加天數（工作天與日曆天規則不同）。
 
 6. **token 會過期，收到 401 就導回登入。** 登入與註冊回應帶 `token_expires_at`（絕對到期）與 `token_idle_timeout_minutes`（閒置時限，每次請求重新起算）。會員預設 30 天／7 天，平台人員 12 小時／30 分鐘。可依 `token_expires_at` 提前提示；閒置失效無法預告，任何請求回 401 都應清掉 token 並導回登入頁。見 [storefront/01 token 時限](storefront/01-auth.md#token-時限)。
 
@@ -222,6 +222,9 @@ document.body.appendChild(f); f.submit();
 - **行為變更**：`storefront/products?category_id=` 給主分類時涵蓋其子分類（原為完全比對，點主分類會是空的）。
 - **回應修正**：`platform/organizations*` 與開店申請詳情（賣家、工會、平台）原本會把**值為 null 的欄位整個拿掉**（如 `status_reason`、`submitted_at`、`decided_at`），現在一律輸出、值為 `null`。若前端曾用 `'key' in obj` 判斷，請改看值。清單視角不帶的 `pending_actions`、`approval_checklist` 仍然不帶。
 - **回應補欄位**：`storefront/shops/{slug}` 新增 `opened_at`（文件早已列出）。
-- 系統參數 62 項（新增 `password_reset_link_minutes` 與四個 `*_token_*_minutes`）。
+- 系統參數 65 項（新增 `password_reset_link_minutes`、四個 `*_token_*_minutes`，以及 Plan36 的三個自動對帳／撥款參數）。
+- **文件更正（2026-10-19）**：時間欄位一律是 **UTC**（先前 conventions 誤寫為「本地時間」）。
+- **行為變更（2026-10-19，業主決定）**：日期篩選與報表區間改以**台北日**計（原為 UTC 日，月底晚上 8 點後的訂單會算進下個月）；報表 `period` 新增 `from_date`、`to_date`、`timezone`。
+- **行為變更（2026-10-20）**：日期時間**輸入**以**台北時間**解讀（原當成 UTC）：公告 `published_from`／`published_until`、費率與運費 `effective_from`／`effective_to`、系統參數 `effective_from`、出貨 `shipped_at`、結算檔 `lines[].settled_at`。送 `2026-11-01 09:00:00` 就是台北 9 點；帶偏移（`+08:00`、`Z`）依偏移。回應仍是 UTC。原本回填台北「剛剛」的出貨時間會被當成未來而 422，現已修正。
 - 文件補上原本漏寫的回應欄位（登入的 `membership.can_open_shop` 等、平台店面的 `open_violation_*`、買家訂單的 `invoice`／`cancel_request` 等）。之後回應範例與實際回應由整鏈自動比對，漂移即紅燈。
 

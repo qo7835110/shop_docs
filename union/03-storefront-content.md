@@ -34,8 +34,8 @@ GET union/announcements
       "content": "9/28 至 10/1 暫停出貨，訂單將於 10/2 起依序處理。",
       "audience": "public",
       "is_pinned": true,
-      "published_from": "2026-09-20 00:00:00",
-      "published_until": "2026-10-05 23:59:59"
+      "published_from": "2026-09-19 16:00:00",
+      "published_until": "2026-10-05 15:59:59"
     }
   ],
   "errors": null,
@@ -79,8 +79,8 @@ POST union/announcements
 | `content` | string | ✅ | 最長 5000 |
 | `audience` | string | — | `public`（預設）\| `members_only` |
 | `is_pinned` | boolean | — | 預設 `false` |
-| `published_from` | date | ✅ | 生效起始 |
-| `published_until` | date\|null | — | 生效結束，預設 `null`（無限期） |
+| `published_from` | date | ✅ | 生效起始（台北時間，見 [conventions](../conventions.md#時間)） |
+| `published_until` | date\|null | — | 生效結束，預設 `null`（無限期）（台北時間，見 [conventions](../conventions.md#時間)） |
 
 ```json
 {
@@ -144,8 +144,8 @@ PATCH union/announcements/{announcement}
 | `content` | string | 最長 5000 |
 | `audience` | string | `public` \| `members_only` |
 | `is_pinned` | boolean | — |
-| `published_from` | date | — |
-| `published_until` | date\|null | — |
+| `published_from` | date | 台北時間，同建立 |
+| `published_until` | date\|null | 台北時間，同建立 |
 
 回應 200，`data` 為公告單筆，`message`：`公告已更新。`
 

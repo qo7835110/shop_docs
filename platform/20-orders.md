@@ -28,7 +28,7 @@ GET platform/orders
 | `organization_id` | integer | **賣方**店面所屬組織，不是買家的工會（§13.5.2） |
 | `shop_id` | integer | 任一子訂單屬於此店面 |
 | `buyer_member_id` | integer | 買家會員 |
-| `created_from` | string | `Y-m-d`，成立日（含）起 |
+| `created_from` | string | `Y-m-d`，成立日（含）起；**台北日**，見[共通約定](../conventions.md#時間) |
 | `created_to` | string | `Y-m-d`，成立日（含）止；須不早於 `created_from` |
 | `page` / `per_page` | integer | 見[共通約定](../conventions.md#分頁) |
 
@@ -157,7 +157,7 @@ GET platform/payments
 | `reconcile_status` | string | `pending`／`matched`／`mismatched`。與 `status` 分開：付款成立不等於對帳相符（§12.1） |
 | `provider` | string | 最長 30，如 `payuni` |
 | `order_no` | string | 最長 40，**主訂單**編號（付款掛在主訂單上） |
-| `created_from` | string | `Y-m-d`，付款嘗試建立日（含）起 |
+| `created_from` | string | `Y-m-d`，付款嘗試建立日（含）起；**台北日** |
 | `created_to` | string | `Y-m-d`，建立日（含）止；須不早於 `created_from` |
 | `page` / `per_page` | integer | 見[共通約定](../conventions.md#分頁) |
 
