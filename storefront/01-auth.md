@@ -152,9 +152,11 @@ Email 啟用信的連結是 `{APP_URL}/activate#token=…`：權杖在 `#` 片�
 | --- | --- | --- | --- |
 | `token` | string | ✅ | 啟用連結裡的權杖 |
 | `password` | string | ✅ | **至少 8 碼且須含英文與數字**，需 `password_confirmation` 相符 |
+| `agree_transaction_terms` | boolean | ✅ | **必須為 true**（§B-01：未同意必要條款不得啟用） |
+| `agree_privacy_policy` | boolean | ✅ | **必須為 true** |
 
 ```json
-{ "token": "…", "password": "myPassw0rd", "password_confirmation": "myPassw0rd" }
+{ "token": "…", "password": "myPassw0rd", "password_confirmation": "myPassw0rd", "agree_transaction_terms": true, "agree_privacy_policy": true }
 ```
 
 ### 回應 200
@@ -182,6 +184,7 @@ Email 啟用信的連結是 `{APP_URL}/activate#token=…`：權杖在 `#` 片�
 | 狀態 | 情況 |
 | --- | --- |
 | 422 | 權杖無效、已使用過、已逾期，或給的是重設密碼連結（兩種連結互不通用） |
+| 422 | 未勾選兩項必要同意（`errors` 指出欄位）；同意與啟用同一交易，會留下同意快照 |
 | 422 | 密碼不符規則或兩次不一致 |
 
 ---
@@ -219,6 +222,7 @@ POST auth/login
       "marketplace_status": "active",
       "is_tradable": true,
       "organization": { "id": 2, "code": "DEMO", "name": "示範職業工會", "type": "union" },
+      "required_consents_granted": true,
       "shops": [
         { "id": 1, "name": "示範工會商店", "slug": "demo-shop", "status": "open" }
       ],
@@ -240,6 +244,7 @@ POST auth/login
 | `membership.can_open_shop` | 這個組織能不能開店。平台預設組織（自行註冊者）恆為 `false`（§2.2.1）。「我要開店」按鈕看它。 |
 | `membership.eligible_for_member_price` | 這個會籍能不能享會員價。由組織類型決定，後端判定（§13.5.2）。 |
 | `membership.membership_paid` | 會費繳納狀態，由會務系統同步，商城**唯讀**（§X-05）。 |
+| `membership.required_consents_granted` | 必要的交易與隱私條款是否已同意（§B-01）。`false` 時**送出訂單與開店申請會被擋**，請先引導使用者以 `PUT buyer/consents` 同意 `transaction_terms`、`privacy_policy`。臨櫃核發初始密碼的帳號沒有經過任何同意畫面，最常是 `false`。 |
 | `membership.shops` | 這個會籍名下的店面（沒有店面時是空陣列）。**賣家後台的第一個畫面靠它** —— 賣家側每一個列表都要 `?shop_id=`，而這是唯一回答得了「我有哪些店」的地方。詳見 [buyer/profile](../buyer/01-profile-and-notifications.md#1-個人資料)。 |
 
 ### token 時限
@@ -272,7 +277,7 @@ token 有兩道時限（plans/35 35-5），任一到了都會失效，之後的�
 | --- | --- | --- |
 | 401 | 帳號不存在或密碼錯誤 | `帳號或密碼不正確。` |
 | 401 | 帳號已停用 | `此帳號已停用，請聯絡所屬組織。` |
-| 429 | 同帳號連續失敗 5 次，鎖 900 秒 | `登入嘗試次數過多，請於 N 秒後再試。` |
+| 429 | 同帳號、同來源 IP 連續失敗 5 次，鎖 900 秒 | `登入嘗試次數過多，請於 N 秒後再試。` |
 
 > **帳號不存在與密碼錯誤回同一句話**，前端不要嘗試區分 —— 那會變成帳號列舉工具。
 >

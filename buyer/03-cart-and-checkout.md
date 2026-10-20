@@ -348,6 +348,7 @@ POST buyer/checkout
 | 422 | 金額與 `expected_payable_amount` 不符 |
 | 422 | 某項此刻買不到（下架、售完、店面停權、會員限定資格不符） |
 | 422 | 你本人不可交易（`is_tradable` 為 `false`） |
+| 422 | 尚未同意必要的交易與隱私條款（`membership.required_consents_granted` 為 `false`）：`請先同意交易條款與隱私權政策才能繼續（buyer/consents）(spec §B-01)。` —— **試算不擋**，送出才擋 |
 | 422 | 選了超商取貨但**未取貨次數已達上限**（§14.7.3，見 [09](09-pickup-failures.md)） |
 | 422 | 該店的配送方式交集為空 |
 | 422 | 店面未開通所選的 PAYUNi 物流通路，或開通狀態尚未確認／已過期（§13.2.2） |

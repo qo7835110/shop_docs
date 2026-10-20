@@ -33,6 +33,7 @@ GET buyer/profile
       "eligible_for_member_price": true,
       "phone": "0912345678",
       "email": "demo-buyer@example.test",
+      "required_consents_granted": true,
       "shops": [
         { "id": 1, "name": "示範工會商店", "slug": "demo-shop", "status": "open" }
       ]
@@ -50,6 +51,7 @@ GET buyer/profile
 | `must_change_password` | 還在用組織方核發的**一次性初始密碼**（§X-05.1）。為 `true` 時請顯示提示並導向[變更密碼](../storefront/01-auth.md#5-變更密碼)。登入回應也帶同一格，但登入只發生一次 —— 使用者關掉那個提示、隔天再進來就沒有任何地方會再提醒他，而那組密碼經線下管道交付，看過它的人不只他一個。 |
 | `membership` | 這組帳號所屬的會籍。**不會是 `null`** —— 帳號就在會籍上。 |
 | `identity_card` | **一律遮罩**；未設定時為 `null`。買家端**沒有**取得完整身分證號的端點。 |
+| `membership.required_consents_granted` | 必要的交易與隱私條款（`transaction_terms`、`privacy_policy`）是否已同意 (§B-01)。`false` 時送出訂單與開店申請會被擋；用第 3 條 `PUT buyer/consents` 同意即可。 |
 | `membership.shops` | 這個會籍名下的店面。沒有店面時是**空陣列**，不是 `null`。 |
 
 ### `shops`：賣家後台的入口

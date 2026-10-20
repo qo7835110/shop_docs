@@ -185,7 +185,7 @@ POST platform/refunds/{refundNo}/dispute-decision
 | `should_refund` | 結果 |
 | --- | --- |
 | `true` | 退款單 → `processing`，等待財務執行 |
-| `false` | 退款單 → `closed`；子訂單依 §14.4.0 回復：原已完成則維持，原已送達則依原期限決定已送達或已完成，不重新起算期限 |
+| `false` | 退款單 → `closed`，裁定說明同時寫入 `dispute_resolution` 與 `closed_reason`；子訂單依 §14.4.0 回復：原已完成則維持，原已送達則依原期限決定已送達或已完成，不重新起算期限 |
 
 裁定以鎖定後的最新狀態判斷；已裁定或已結案的舊請求回 422，不覆寫原結果、不新增裁定稽核。
 裁定、狀態、子訂單回復與通知建立同交易提交，失敗全部回滾。
@@ -738,7 +738,7 @@ GET platform/payouts
 | 參數 | 型別 | 說明 |
 | --- | --- | --- |
 | `status` | string | `pending` \| `paid` \| `failed` \| `deferred` \| `aborted`。**可逗號分隔** |
-> **`status` 接受逗號分隔的多個值**（例如 `status=open,watching`）。
+> **`status` 接受逗號分隔的多個值**（例如 `status=failed,aborted`）。
 > [營運總覽](02-overview.md#links--每一個數字自己的去處)的風險數字是**兩個狀態的
 > 聯集**，而總覽的 `links` 帶的正是這種寫法 —— 一次只吃一個值的話，
 > 那個數字會「數得出來卻列不出來」。每一段都必須是允許值，否則整個請求回 422
@@ -974,7 +974,7 @@ GET platform/chargebacks
 | 參數 | 型別 | 說明 |
 | --- | --- | --- |
 | `status` | string | `pending` \| `responded` \| `won` \| `lost`。**可逗號分隔** |
-> **`status` 接受逗號分隔的多個值**（例如 `status=open,watching`）。
+> **`status` 接受逗號分隔的多個值**（例如 `status=pending,responded`）。
 > [營運總覽](02-overview.md#links--每一個數字自己的去處)的風險數字是**兩個狀態的
 > 聯集**，而總覽的 `links` 帶的正是這種寫法 —— 一次只吃一個值的話，
 > 那個數字會「數得出來卻列不出來」。每一段都必須是允許值，否則整個請求回 422
